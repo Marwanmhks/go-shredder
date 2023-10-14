@@ -3,6 +3,8 @@ package shredder
 import (
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const testingDir = "./test_data"
@@ -14,9 +16,7 @@ func TestShredFile(t *testing.T) {
 
 	// Shred the file
 	err := Shred(filePath)
-	if err != nil {
-		t.Errorf("Expected no error, but got: %v", err)
-	}
+	assert.NoError(t, err, "Expected no error when shredding the file")
 }
 
 func TestFileWithConfig(t *testing.T) {
@@ -26,19 +26,15 @@ func TestFileWithConfig(t *testing.T) {
 
 	config := Config{
 		Iterations: 3,
-		Remove:    false,
+		Remove:     false,
 	}
 
 	err := config.File(filePath)
-	if err != nil {
-		t.Errorf("Expected no error, but got: %v", err)
-	}
+	assert.NoError(t, err, "Expected no error when shredding with Config")
 
 	// Check that the file still exists after shredding with Config
 	_, err = os.Stat(filePath)
-	if err != nil {
-		t.Errorf("Expected file to exist, but it did not.")
-	}
+	assert.NoError(t, err, "Expected file to exist after shredding with Config")
 }
 
 func TestFileWithConfigAndRemoval(t *testing.T) {
@@ -48,27 +44,21 @@ func TestFileWithConfigAndRemoval(t *testing.T) {
 
 	config := Config{
 		Iterations: 3,
-		Remove:    true,
+		Remove:     true,
 	}
 
 	err := config.File(filePath)
-	if err != nil {
-		t.Errorf("Expected no error, but got: %v", err)
-	}
+	assert.NoError(t, err, "Expected no error when shredding with Config and removal")
 
 	// Check that the file no longer exists after shredding with Config and removal
 	_, err = os.Stat(filePath)
-	if !os.IsNotExist(err) {
-		t.Errorf("Expected file to be removed, but it still exists.")
-	}
+	assert.Error(t, err, "Expected file to be removed after shredding with Config and removal")
 }
 
 func TestShredNonExistentFile(t *testing.T) {
 	filePath := "non_existent_file.txt" // This file does not exist
 	err := Shred(filePath)
-	if err == nil {
-		t.Error("Expected an error for a non-existent file, but got none.")
-	}
+	assert.Error(t, err, "Expected an error for shredding a non-existent file")
 }
 
 func TestShredFileWithInvalidPermissions(t *testing.T) {
@@ -83,36 +73,12 @@ func TestShredFileWithInvalidPermissions(t *testing.T) {
 	}
 
 	err = Shred(filePath)
-	if err == nil {
-		t.Error("Expected an error when shredding a file with invalid permissions, but got none.")
-	}
+	assert.Error(t, err, "Expected an error when shredding a file with invalid permissions")
 
 	// Restore file permissions
 	err = os.Chmod(filePath, 0644)
 	if err != nil {
 		t.Fatalf("Error restoring file permissions: %v", err)
-	}
-}
-
-func TestFileWithConfig_Remove(t *testing.T) {
-	// Create a test file with some data
-	filePath := createTestFile([]byte("test data"), t)
-	defer os.Remove(filePath)
-
-	config := Config{
-		Iterations: 1,
-		Remove:    true,
-	}
-
-	err := config.File(filePath)
-	if err != nil {
-		t.Errorf("Expected no error, but got: %v", err)
-	}
-
-	// Check that the file no longer exists after shredding with Config and removal
-	_, err = os.Stat(filePath)
-	if !os.IsNotExist(err) {
-		t.Errorf("Expected file to be removed, but it still exists.")
 	}
 }
 
@@ -135,9 +101,7 @@ func createTestFile(data []byte, t *testing.T) string {
 	if err != nil {
 		t.Fatalf("can't write to test file %s: %s", filePath, err)
 	}
-	if n != len(data) {
-		t.Fatalf("wrote %d bytes only, %d bytes expected", n, len(data))
-	}
+	assert.Equal(t, len(data), n, "Expected to write the correct number of bytes")
 
 	err = f.Close()
 	if err != nil {
@@ -146,4 +110,3 @@ func createTestFile(data []byte, t *testing.T) string {
 
 	return filePath
 }
-
